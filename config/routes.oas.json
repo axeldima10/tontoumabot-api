@@ -1,0 +1,1927 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Tontouma Bot — API des 5 User Stories prioritaires",
+    "version": "1.0.0",
+    "description": "Sous-ensemble filtré de tontouma-bot-api-contract-COMPLET.yaml, limité aux endpoints strictement nécessaires aux 5 US du backlog MVP (3 Must Have, 2 Nice to Have — Form Builder). US2 (chat IA) : seul /access-ticket est ici — le canal conversationnel lui-même (texte SSE / voix WebSocket) est un contrat séparé, voir tontouma-bot-ai-service-contract.md, car il n'est pas exposé par ce backend Spring (architecture par ticket, v3)."
+  },
+  "servers": [
+    {
+      "url": "https://api.tontoumabot.sn/api/v1",
+      "description": "Production (à confirmer)"
+    },
+    {
+      "url": "http://localhost:8080/api/v1",
+      "description": "Développement local"
+    }
+  ],
+  "security": [
+    {
+      "clerkAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "clerkAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Header: Authorization: Bearer <token Clerk>. Absent sur /public/... et /access-ticket."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clerk_org_id": {
+            "type": "string"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "adresse": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "siteWeb": {
+            "type": "string"
+          },
+          "logo_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspendue"
+            ]
+          },
+          "dateCreation": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AuthenticatedUser": {
+        "type": "object",
+        "properties": {
+          "clerk_user_id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "super_admin",
+              "admin"
+            ]
+          },
+          "organization": {
+            "$ref": "#/components/schemas/Organization"
+          }
+        }
+      },
+      "AccessResolution": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string"
+          },
+          "organization": {
+            "$ref": "#/components/schemas/Organization"
+          }
+        }
+      },
+      "ServiceOffering": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "departement_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "localisation": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "horaires": {
+            "type": "string"
+          },
+          "ordre": {
+            "type": "integer"
+          },
+          "statut_publication": {
+            "type": "string",
+            "enum": [
+              "brouillon",
+              "publie"
+            ]
+          }
+        }
+      },
+      "Procedure": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "service_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "cout": {
+            "type": "string",
+            "nullable": true
+          },
+          "delai": {
+            "type": "string",
+            "nullable": true
+          },
+          "lieu": {
+            "type": "string",
+            "nullable": true
+          },
+          "infoComplementaire": {
+            "type": "string",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "brouillon",
+              "publie"
+            ]
+          }
+        }
+      },
+      "ConditionDemarche": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "procedure_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string"
+          },
+          "ordre": {
+            "type": "integer"
+          }
+        }
+      },
+      "PieceRequise": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "procedure_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "nombreExemplaire": {
+            "type": "integer"
+          },
+          "format": {
+            "type": "string",
+            "nullable": true
+          },
+          "obligatoire": {
+            "type": "boolean"
+          },
+          "ordre": {
+            "type": "integer"
+          }
+        }
+      },
+      "Formulaire": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "procedure_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "actif": {
+            "type": "boolean"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "brouillon",
+              "publie"
+            ]
+          }
+        }
+      },
+      "SectionFormulaire": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "formulaire_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "ordre": {
+            "type": "integer"
+          }
+        }
+      },
+      "ChampFormulaire": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "section_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "texte",
+              "nombre",
+              "date",
+              "select",
+              "checkbox",
+              "fichier"
+            ]
+          },
+          "nom": {
+            "type": "string"
+          },
+          "etiquette": {
+            "type": "string"
+          },
+          "placeholder": {
+            "type": "string",
+            "nullable": true
+          },
+          "obligatoire": {
+            "type": "boolean"
+          },
+          "valeurParDefaut": {
+            "type": "string",
+            "nullable": true
+          },
+          "options": {
+            "type": "object",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer"
+          }
+        }
+      },
+      "FormulaireSubmission": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "formulaire_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "reponses": {
+            "type": "object"
+          },
+          "dateSoumission": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/organizations/{organizationId}/services": {
+      "get": {
+        "summary": "Liste — ServiceOffering",
+        "tags": [
+          "Contenu - Services"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceOffering"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "liste-service-offering",
+        "additionalOperationContext": {
+          "oasFilePath": "/config/routes.oas.json",
+          "method": "get",
+          "path": "/organizations/{organizationId}/services"
+        }
+      },
+      "post": {
+        "summary": "Crée — ServiceOffering",
+        "tags": [
+          "Contenu - Services"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceOffering"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOffering"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle insuffisant / organisation non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "cree-service-offering"
+      }
+    },
+    "/organizations/{organizationId}/services/{id}": {
+      "get": {
+        "summary": "Détail — ServiceOffering",
+        "tags": [
+          "Contenu - Services"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOffering"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "detail-service-offering"
+      },
+      "patch": {
+        "summary": "Met à jour — ServiceOffering",
+        "tags": [
+          "Contenu - Services"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceOffering"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOffering"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle insuffisant / organisation non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "met-a-jour-service-offering"
+      }
+    },
+    "/organizations/{organizationId}/services/{serviceId}/procedures": {
+      "get": {
+        "summary": "Liste — Procedure",
+        "tags": [
+          "Contenu - Démarches"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Procedure"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "liste-procedure"
+      },
+      "post": {
+        "summary": "Crée — Procedure",
+        "tags": [
+          "Contenu - Démarches"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Procedure"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Procedure"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle insuffisant / organisation non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "cree-procedure"
+      }
+    },
+    "/organizations/{organizationId}/services/{serviceId}/procedures/{id}": {
+      "get": {
+        "summary": "Détail — Procedure",
+        "tags": [
+          "Contenu - Démarches"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Procedure"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "detail-procedure"
+      },
+      "patch": {
+        "summary": "Met à jour — Procedure",
+        "tags": [
+          "Contenu - Démarches"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Procedure"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Procedure"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle insuffisant / organisation non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "met-a-jour-procedure"
+      }
+    },
+    "/organizations/{organizationId}/procedures/{procedureId}/conditions": {
+      "get": {
+        "summary": "Liste — ConditionDemarche",
+        "tags": [
+          "Contenu - Conditions"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "procedureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ConditionDemarche"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "liste-condition-demarche"
+      },
+      "post": {
+        "summary": "Crée — ConditionDemarche",
+        "tags": [
+          "Contenu - Conditions"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "procedureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConditionDemarche"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConditionDemarche"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle insuffisant / organisation non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "cree-condition-demarche"
+      }
+    },
+    "/organizations/{organizationId}/procedures/{procedureId}/pieces-requises": {
+      "get": {
+        "summary": "Liste — PieceRequise",
+        "tags": [
+          "Contenu - Pièces requises"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "procedureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PieceRequise"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "liste-piece-requise"
+      },
+      "post": {
+        "summary": "Crée — PieceRequise",
+        "tags": [
+          "Contenu - Pièces requises"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "procedureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PieceRequise"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PieceRequise"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle insuffisant / organisation non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "cree-piece-requise"
+      }
+    },
+    "/public/organizations/{organizationId}/services": {
+      "get": {
+        "summary": "US1/US3 — Liste les services publiés",
+        "tags": [
+          "Public - Usager"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceOffering"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "us-1-us-3-liste-les-services-publies"
+      }
+    },
+    "/public/access/{accessToken}": {
+      "get": {
+        "summary": "US2 — Résout une Borne ou un QRCode vers une organisation",
+        "tags": [
+          "Public - Usager"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "accessToken",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResolution"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "us-2-resout-une-borne-ou-un-qr-code-vers-une-organisation"
+      }
+    },
+    "/access-ticket": {
+      "post": {
+        "summary": "US2 — Émet un ticket signé pour dialoguer directement avec l'AI Service",
+        "tags": [
+          "Public - Usager"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket émis, 15 min",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ticket": {
+                      "type": "string"
+                    },
+                    "expires_in": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Session invalide ou abonnement expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "us-2-emet-un-ticket-signe-pour-dialoguer-directement-avec-l-ai-service"
+      }
+    },
+    "/me": {
+      "get": {
+        "summary": "US3 — Info de l'utilisateur connecté",
+        "tags": [
+          "Authentifié"
+        ],
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedUser"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "us-3-info-de-l-utilisateur-connecte"
+      }
+    },
+    "/public/organizations/{organizationId}/procedures/{procedureId}/formulaire": {
+      "get": {
+        "summary": "US4 — Usager consulte le formulaire d'une démarche",
+        "tags": [
+          "Public - Formulaires"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "procedureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK, avec sections et champs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Formulaire"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "us-4-usager-consulte-le-formulaire-d-une-demarche"
+      }
+    },
+    "/public/organizations/{organizationId}/formulaires/{formulaireId}/submissions": {
+      "post": {
+        "summary": "US4 — Usager soumet un formulaire rempli",
+        "tags": [
+          "Public - Formulaires"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "formulaireId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string"
+                  },
+                  "reponses": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Soumission enregistrée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormulaireSubmission"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "us-4-usager-soumet-un-formulaire-rempli"
+      }
+    },
+    "/organizations/{organizationId}/procedures/{procedureId}/formulaire": {
+      "get": {
+        "summary": "Liste — Formulaire",
+        "tags": [
+          "Formulaires"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "procedureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Formulaire"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "liste-formulaire"
+      },
+      "post": {
+        "summary": "Crée — Formulaire",
+        "tags": [
+          "Formulaires"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "procedureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Formulaire"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Formulaire"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle insuffisant / organisation non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "cree-formulaire"
+      }
+    },
+    "/organizations/{organizationId}/formulaires/{formulaireId}/sections": {
+      "get": {
+        "summary": "Liste — SectionFormulaire",
+        "tags": [
+          "Formulaires - Sections"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "formulaireId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SectionFormulaire"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "liste-section-formulaire"
+      },
+      "post": {
+        "summary": "Crée — SectionFormulaire",
+        "tags": [
+          "Formulaires - Sections"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "formulaireId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SectionFormulaire"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionFormulaire"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle insuffisant / organisation non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "cree-section-formulaire"
+      }
+    },
+    "/organizations/{organizationId}/sections/{sectionId}/champs": {
+      "get": {
+        "summary": "Liste — ChampFormulaire",
+        "tags": [
+          "Formulaires - Champs"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ChampFormulaire"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "liste-champ-formulaire"
+      },
+      "post": {
+        "summary": "Crée — ChampFormulaire",
+        "tags": [
+          "Formulaires - Champs"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChampFormulaire"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChampFormulaire"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle insuffisant / organisation non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clerkAuth": []
+          }
+        ],
+        "operationId": "cree-champ-formulaire"
+      }
+    }
+  }
+}
